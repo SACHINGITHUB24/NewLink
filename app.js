@@ -170,7 +170,7 @@ app.use(cookieParser());
 
 // ROUTES (same as before, no change needed)
 app.get('/', (req, res) => {
-    res.render('signup');
+    res.render('signupre');
 });
 
 app.post('/', async (req, res) => {
