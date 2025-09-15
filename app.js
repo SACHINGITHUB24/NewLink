@@ -1,98 +1,229 @@
-const express = require('express');
-const app = express();
-const path = require('path');
-const signupdata = require('./models/signup');
-const bcrypt  =require('bcrypt');
-const jwt = require('jsonwebtoken');
-const cookie = require('cookie-parser');
-const Link = require('./models/savedlink');
+// const express = require('express');
+// const app = express();
+// const path = require('path');
+// const signupdata = require('./models/signup');
+// const bcrypt  =require('bcrypt');
+// const jwt = require('jsonwebtoken');
+// const cookie = require('cookie-parser');
+// const Link = require('./models/savedlink');
   
 
+
+// app.set('view engine', 'ejs');
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+// app.use(express.static(path.join(__dirname, 'public')));
+// app.use(cookie());
+
+// app.get('/',function(req,res){
+//     res.render("signup");
+// })
+
+// app.post('/', async function(req,res){
+//     let {name, email,password} = req.body;
+
+
+
+//     bcrypt.genSalt(15,(err,salt) => {
+//         bcrypt.hash(password,salt, async (err,hash) => {
+//             let signup = signupdata.create({
+//                 name,
+//                 email,
+//                 password: hash,
+
+//             });
+
+//             let generatedtoken = jwt.sign({ email }, "secret");
+
+//             res.cookie("Token",generatedtoken);
+
+
+//             const data = await Link.find();
+
+//             res.render('QuickLink' , { data });
+
+//             // res.render('QuickLink', { data });
+
+
+//         })
+//     })
+   
+// })
+
+// app.get('/login',function(req,res){
+//     res.render('login')
+// })
+
+// app.post('/login', async function(req,res){
+//     let signuser = await signupdata.findOne({email: req.body.email});
+//     if(!signuser){
+//         res.status(404).send("User not Found ");
+//     }
+//     bcrypt.compare(req.body.password, signupdata.password, async function(err,result){
+//         if(result){
+//             let token = jwt.sign({email: signupdata.email},"pass");
+//             res.cookie("Token",token);
+
+
+//             const data = await Link.find();
+
+//             res.render('QuickLink' , { data });
+//         }else{
+//             res.status(500).send("An Error Occured During Login");
+//         }
+//     })
+// })
+
+// app.get('/logout',function(req,res){
+//     res.cookie('Token',"");
+//     res.redirect('/login')
+// })
+
+
+// app.get('/formdata',function(req,res){
+//     res.render('QuickLink');
+// })
+
+
+
+
+
+// app.post('/formdata', async function(req, res) {
+//     let { title, url } = req.body;
+
+
+    
+
+//     try {
+//         const newLink = new Link({ title, url });
+//         await newLink.save();
+
+//         const data = await Link.find();
+//         res.render('QuickLink', { data });
+//     } catch (error) {
+//         console.error("Error saving link:", error);
+//         res.status(500).send("Error saving link.");
+//     }
+// });
+
+
+// // const savedata = savedLink(title,url);
+
+
+//     // });
+// // })
+// // });
+
+// app.get('/formdata', async function(req,res){
+//     let links = await Link.find();
+
+//     res.render('QuickLink',{ data: links })
+// })
+
+
+
+
+// app.get('/deletelink/:id', async function(req, res) {
+//     const id = req.params.id; 
+//     await Link.findByIdAndDelete(id);
+//     const data = await Link.find(); 
+//     res.render('QuickLink', { data });
+// });
+
+
+
+
+
+
+
+// app.listen(3000,function(){
+//     console.log("Server has started on port 3000");
+    
+// })
+
+
+
+const express = require('express');
+const path = require('path');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+const mongoose = require('mongoose');
+
+// SINGLE DB CONNECTION
+mongoose.connect(
+    'mongodb+srv://QUICK:LINKDATAPASS@linksdata.jaczn.mongodb.net/?retryWrites=true&w=majority&appName=LinksData'
+)
+.then(() => console.log('MongoDB Connected Successfully'))
+.catch(err => console.error('MongoDB Connection Error:', err));
+
+const signupdata = require('./models/signup');
+const Link = require('./models/savedlink');
+
+const app = express();
 
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(cookie());
+app.use(cookieParser());
 
-app.get('/',function(req,res){
-    res.render("signup");
-})
+// ROUTES (same as before, no change needed)
+app.get('/', (req, res) => {
+    res.render('signup');
+});
 
-app.post('/', async function(req,res){
-    let {name, email,password} = req.body;
+app.post('/', async (req, res) => {
+    let { name, email, password } = req.body;
 
+    const salt = await bcrypt.genSalt(15);
+    const hash = await bcrypt.hash(password, salt);
 
+    await signupdata.create({ name, email, password: hash });
 
-    bcrypt.genSalt(15,(err,salt) => {
-        bcrypt.hash(password,salt, async (err,hash) => {
-            let signup = signupdata.create({
-                name,
-                email,
-                password: hash,
+    const generatedToken = jwt.sign({ email }, "secret");
+    res.cookie("Token", generatedToken);
 
-            });
+    const data = await Link.find();
+    res.render('QuickLink', { data });
+});
 
-            let generatedtoken = jwt.sign({ email }, "secret");
+app.get('/login', (req, res) => {
+    res.render('login');
+});
 
-            res.cookie("Token",generatedtoken);
+app.post('/login', async (req, res) => {
+    const signuser = await signupdata.findOne({ email: req.body.email });
 
-
-            const data = await Link.find();
-
-            res.render('QuickLink' , { data });
-
-            // res.render('QuickLink', { data });
-
-
-        })
-    })
-   
-})
-
-app.get('/login',function(req,res){
-    res.render('login')
-})
-
-app.post('/login', async function(req,res){
-    let signuser = await signupdata.findOne({email: req.body.email});
-    if(!signuser){
-        res.status(404).send("User not Found ");
+    if (!signuser) {
+        return res.status(404).send("User not Found");
     }
-    bcrypt.compare(req.body.password, signupdata.password, async function(err,result){
-        if(result){
-            let token = jwt.sign({email: signupdata.email},"pass");
-            res.cookie("Token",token);
 
+    const result = await bcrypt.compare(req.body.password, signuser.password);
 
-            const data = await Link.find();
+    if (result) {
+        const token = jwt.sign({ email: signuser.email }, "pass");
+        res.cookie("Token", token);
 
-            res.render('QuickLink' , { data });
-        }else{
-            res.status(500).send("An Error Occured During Login");
-        }
-    })
-})
+        const data = await Link.find();
+        res.render('QuickLink', { data });
+    } else {
+        res.status(401).send("Invalid credentials");
+    }
+});
 
-app.get('/logout',function(req,res){
-    res.cookie('Token',"");
-    res.redirect('/login')
-})
+app.get('/logout', (req, res) => {
+    res.cookie('Token', '');
+    res.redirect('/login');
+});
 
+app.get('/formdata', async (req, res) => {
+    const data = await Link.find();
+    res.render('QuickLink', { data });
+});
 
-app.get('/formdata',function(req,res){
-    res.render('QuickLink');
-})
-
-
-
-
-
-app.post('/formdata', async function(req, res) {
+app.post('/formdata', async (req, res) => {
     let { title, url } = req.body;
-
-
-    
 
     try {
         const newLink = new Link({ title, url });
@@ -106,37 +237,14 @@ app.post('/formdata', async function(req, res) {
     }
 });
 
-
-// const savedata = savedLink(title,url);
-
-
-    // });
-// })
-// });
-
-app.get('/formdata', async function(req,res){
-    let links = await Link.find();
-
-    res.render('QuickLink',{ data: links })
-})
-
-
-
-
-app.get('/deletelink/:id', async function(req, res) {
-    const id = req.params.id; 
+app.get('/deletelink/:id', async (req, res) => {
+    const id = req.params.id;
     await Link.findByIdAndDelete(id);
-    const data = await Link.find(); 
+
+    const data = await Link.find();
     res.render('QuickLink', { data });
 });
 
-
-
-
-
-
-
-app.listen(3000,function(){
-    console.log("Server has started on port 3000");
-    
-})
+app.listen(3000, () => {
+    console.log("Server running on port 3000");
+});
